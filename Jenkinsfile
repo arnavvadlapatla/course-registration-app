@@ -10,24 +10,26 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'mvn clean test'
+                bat 'mvn clean test'
             }
             post {
                 always {
-                    junit 'course-registration-app/target/surefire-reports/TEST-*.xml'
+                    junit testResults: 'course-registration-app/target/surefire-reports/TEST-*.xml',
+                          allowEmptyResults: true
                 }
             }
         }
 
         stage('Package') {
             steps {
-                sh 'mvn package -DskipTests'
+                bat 'mvn package -DskipTests'
             }
         }
 
-        stage('Archive') {
+        stage('Archive Artifact') {
             steps {
-                archiveArtifacts artifacts: 'course-registration-app/target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'course-registration-app/target/*.jar',
+                                 fingerprint: true
             }
         }
     }
