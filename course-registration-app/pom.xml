@@ -13,7 +13,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>course-registration</artifactId>
+    <artifactId>course-registration-app</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
