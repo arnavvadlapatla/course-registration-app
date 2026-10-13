@@ -3,6 +3,8 @@ package com.university;
 public class RegistrationService {
 
     private static final int MAX_CREDITS = 20;
+    private static final String EQUIVALENT_PREREQUISITE_TARGET = "CS301";
+    private static final String EQUIVALENT_PREREQUISITE_ALTERNATE = "CS3A1";
 
     public boolean register(Student student, Course course) {
 
@@ -10,7 +12,7 @@ public class RegistrationService {
             return false;
         }
 
-        if (course.getCurrentEnrollment() > course.getCapacity()) {
+        if (course.getCurrentEnrollment() >= course.getCapacity()) {
             return false;
         }
 
@@ -22,7 +24,7 @@ public class RegistrationService {
 
         if (prerequisite != null
                 && !prerequisite.isBlank()
-                && !student.hasCompletedPrerequisite(prerequisite)) {
+                && !isPrerequisiteSatisfied(student, prerequisite)) {
             return false;
         }
 
@@ -37,5 +39,13 @@ public class RegistrationService {
         course.incrementEnrollment();
 
         return true;
+    }
+
+    private boolean isPrerequisiteSatisfied(Student student, String prerequisite) {
+        if (student.hasCompletedPrerequisite(prerequisite)) {
+            return true;
+        }
+        return EQUIVALENT_PREREQUISITE_TARGET.equals(prerequisite)
+                && student.hasCompletedPrerequisite(EQUIVALENT_PREREQUISITE_ALTERNATE);
     }
 }
