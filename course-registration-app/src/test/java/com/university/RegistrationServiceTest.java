@@ -152,9 +152,11 @@ class RegistrationServiceTest {
 
     }
 
+    
+
     private final RegistrationService capacityService = new RegistrationService();
 
-    // Builds an active, no-prerequisite 4-credit course with 'taken' seats already used
+    
     private Course courseWithSeatsTaken(int capacity, int taken) {
         Course course = new Course("CS301", "Data Structures", 4, capacity, true, null);
         for (int i = 0; i < taken; i++) {
@@ -166,7 +168,7 @@ class RegistrationServiceTest {
     @Test
     void shouldRejectRegistrationWhenCourseIsAlreadyFull() {
         Student student = new Student("S101", "Anita");
-        Course course = courseWithSeatsTaken(2, 2);   // 2 of 2 seats used
+        Course course = courseWithSeatsTaken(2, 2);   
 
         boolean result = capacityService.register(student, course);
 
@@ -179,7 +181,7 @@ class RegistrationServiceTest {
     @Test
     void shouldAcceptRegistrationForLastRemainingSeat() {
         Student student = new Student("S101", "Anita");
-        Course course = courseWithSeatsTaken(2, 1);   // exactly 1 seat left
+        Course course = courseWithSeatsTaken(2, 1);   
 
         boolean result = capacityService.register(student, course);
 
@@ -195,8 +197,8 @@ class RegistrationServiceTest {
         Student first = new Student("S101", "Anita");
         Student second = new Student("S102", "Ravi");
 
-        assertTrue(capacityService.register(first, course));    // takes the last seat
-        assertFalse(capacityService.register(second, course));  // course is now full
+        assertTrue(capacityService.register(first, course));    
+        assertFalse(capacityService.register(second, course));  
 
         assertFalse(second.isRegistered("CS301"));
         assertEquals(0, second.getTotalCredits());
@@ -206,8 +208,8 @@ class RegistrationServiceTest {
     @Test
     void rejectedAttemptShouldNotChangeExistingStudentState() {
         Student student = new Student("S101", "Anita");
-        student.addRegistration("CS101", 4);            // already has 1 course, 4 credits
-        Course course = courseWithSeatsTaken(1, 1);     // full
+        student.addRegistration("CS101", 4);            
+        Course course = courseWithSeatsTaken(1, 1);     
 
         boolean result = capacityService.register(student, course);
 
@@ -217,5 +219,81 @@ class RegistrationServiceTest {
         assertTrue(student.isRegistered("CS101"));
         assertFalse(student.isRegistered("CS301"));
         assertEquals(1, course.getCurrentEnrollment());
+    }
+
+    private Course advancedCourse() {
+        return new Course("CS401", "Advanced Algorithms", 4, 30, true, "CS301");
+    }
+
+    @Test
+    void shouldAcceptStudentWhoCompletedCS301() {
+        Student student = new Student("S101", "Anita");
+        student.addCompletedPrerequisite("CS301");
+        Course course = advancedCourse();
+
+        assertTrue(capacityService.register(student, course));
+        assertTrue(student.isRegistered("CS401"));
+        assertEquals(4, student.getTotalCredits());
+        assertEquals(1, course.getCurrentEnrollment());
+    }
+
+    @Test
+    void shouldAcceptStudentWhoCompletedCS3A1InsteadOfCS301() {
+        Student student = new Student("S101", "Anita");
+        student.addCompletedPrerequisite("CS3A1");
+        Course course = advancedCourse();
+
+        assertTrue(capacityService.register(student, course));
+        assertTrue(student.isRegistered("CS401"));
+        assertEquals(4, student.getTotalCredits());
+        assertEquals(1, course.getCurrentEnrollment());
+    }
+
+    @Test
+    void shouldRejectStudentWhoCompletedNeitherAndLeaveStateUnchanged() {
+        Student student = new Student("S101", "Anita");
+        Course course = advancedCourse();
+
+        assertFalse(capacityService.register(student, course));
+        assertFalse(student.isRegistered("CS401"));
+        assertTrue(student.getRegisteredCourses().isEmpty());
+        assertEquals(0, student.getTotalCredits());
+        assertEquals(0, course.getCurrentEnrollment());
+    }
+
+    @Test
+    void shouldRejectStudentWhoCompletedOnlyAnUnrelatedCourse() {
+        Student student = new Student("S101", "Anita");
+        student.addCompletedPrerequisite("CS201");
+        Course course = advancedCourse();
+
+        assertFalse(capacityService.register(student, course));
+        assertTrue(student.getRegisteredCourses().isEmpty());
+        assertEquals(0, student.getTotalCredits());
+        assertEquals(0, course.getCurrentEnrollment());
+    }
+
+    @Test
+    void equivalenceShouldNotMakeCourseCodesIdenticalForDuplicateChecks() {
+        Student student = new Student("S101", "Anita");
+        student.addRegistration("CS3A1", 4);   
+        Course cs301 = new Course("CS301", "Data Structures", 4, 30, true, null);
+
+        assertTrue(capacityService.register(student, cs301));
+        assertTrue(student.isRegistered("CS3A1"));
+        assertTrue(student.isRegistered("CS301"));
+        assertEquals(8, student.getTotalCredits());
+        assertEquals(1, cs301.getCurrentEnrollment());
+    }
+
+    @Test
+    void equivalenceShouldNotApplyToOtherPrerequisites() {
+        Student student = new Student("S101", "Anita");
+        student.addCompletedPrerequisite("CS301");
+        Course requiresCS3A1 = new Course("CS402", "Other Course", 4, 30, true, "CS3A1");
+
+        assertFalse(capacityService.register(student, requiresCS3A1));
+        assertEquals(0, student.getTotalCredits());
+        assertEquals(0, requiresCS3A1.getCurrentEnrollment());
     }
 }
