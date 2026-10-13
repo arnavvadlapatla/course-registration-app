@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                branch: 'main' , url: 'https://github.com/arnavvadlapatla/course-registration-app.git'
             }
         }
 
